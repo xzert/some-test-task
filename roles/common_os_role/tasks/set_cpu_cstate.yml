@@ -1,0 +1,85 @@
+---
+- name: Common OS | Setup CPU | Get current max level of Cx-states
+  ansible.builtin.slurp:
+    src: "/sys/module/processor/parameters/max_cstate"
+  register: common_os_cpu_catvar1
+  check_mode: false
+  changed_when: false
+  when: common_os_cpu_optimize_cstates
+
+- ansible.builtin.set_fact:
+    common_os_cpu_proc_cstate_current:  "{{ common_os_cpu_catvar1.content | b64decode | trim }}"
+  when: common_os_cpu_optimize_cstates
+
+- name: Common OS | Setup CPU | Get current max level of Cx-states
+  ansible.builtin.slurp:
+    src: "/sys/module/intel_idle/parameters/max_cstate"
+  register: common_os_cpu_catvar2
+  check_mode: false
+  changed_when: false
+  when: common_os_cpu_optimize_cstates
+
+- ansible.builtin.set_fact:
+    common_os_cpu_intel_cstate_current:  "{{ common_os_cpu_catvar2.content | b64decode | trim }}"
+  when: common_os_cpu_optimize_cstates
+
+- name: Common OS | Setup CPU | Get current CPU idle driver type
+  ansible.builtin.slurp:
+    src: "/sys/devices/system/cpu/cpuidle/current_driver"
+  register: common_os_cpu_catvar3
+  check_mode: false
+  changed_when: false
+  when: common_os_cpu_optimize_cstates
+
+- ansible.builtin.set_fact:
+    common_os_cpu_idle_driver_current:  "{{ common_os_cpu_catvar3.content | b64decode | trim }}"
+  when: common_os_cpu_optimize_cstates
+
+- name: Common OS | Setup CPU | Calculate if C-state changes needed
+  ansible.builtin.set_fact:
+    common_os_cpu_cstate_change: true
+  when: common_os_cpu_optimize_cstates and ((common_os_cpu_proc_cstate_current > common_os_cpu_max_cstate ) or (common_os_cpu_intel_cstate_current > common_os_cpu_max_cstate) or ((common_os_cpu_idle_driver_current | lower) != 'none' | bool))
+
+- name: Common OS | Setup CPU | Temporary story existing failsafe GRUB config
+  ansible.builtin.slurp:
+    src: "/etc/default/grub"
+  register: common_os_grub_config_failsafe
+  check_mode: false
+  changed_when: false
+
+- name: Common OS | Set CPU | Modify GRUB CMD Line for C-state
+  ansible.builtin.lineinfile:
+    state: present
+    dest: /etc/default/grub
+    backrefs: true
+    regexp: '^\s*{{ item.key }}\s*="(?!.*{{ item.arg }})(.*)"$'
+    line: '{{ item.key }}="\1 {{ item.arg }}"'
+  loop: "{{ common_os_custon_grub_args }}"
+  notify: common_os_update_grub
+
+- name: Common OS | Set CPU | Trigger GRUB config update
+  block:
+    - name: Common OS | Set CPU | Flush triggered handlers
+      meta: flush_handlers
+      notify: common_os_reboot
+
+    - name: Common OS | Set CPU | Flush triggered handlers (reboot)
+      meta: flush_handlers
+
+    - name: Common OS | Set CPU | Wait 300 seconds, but only start checking after 60 seconds
+      ansible.builtin.wait_for_connection:
+        delay: 50
+        timeout: 300
+        poll: 5
+
+  rescue:
+    - name: Common OS | Set CPU | Restore prevorius GRUB configuration
+      ansible.builtin.copy:
+        src: "{{ common_os_grub_config_failsafe.content | b64decode }}"
+        dest: "/etc/default/grub"
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: Common OS | Set CPU | Restore prevorius GRUB configuration. Update GRUB
+      shell: update-grub

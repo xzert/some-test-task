@@ -1,0 +1,15 @@
+---
+- name: Common OS | Variables sanity check | Check C-state
+  ansible.builtin.set_fact:
+    common_os_cpu_optimize_cstates: false
+  when: ((common_os_cpu_max_cstate | int) > 9) or ((common_os_cpu_max_cstate | int) < 0)
+
+- name: Common OS | Variables sanity check | Check Performance level
+  ansible.builtin.set_fact:
+    common_os_cpu_optimize_performance_level: false
+  when: common_os_cpu_performance_level not in common_os_cpu_performance_levels_list
+
+- name: Common OS | Variables sanity check | Check encryption keys exist
+  ansible.builtin.set_fact:
+    common_os_encrypt_changes: false
+  when: not common_os_encrypt_disk_key

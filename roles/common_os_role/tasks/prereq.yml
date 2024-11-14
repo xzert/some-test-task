@@ -1,0 +1,9 @@
+---
+- name: Common OS | Install prerequipments | Merge packages list
+  ansible.builtin.set_fact:
+    common_os_packages: "{{ (common_os_packages | default('') | list) + common_os_packages_default | unique | list }}"
+
+- name: Common OS | Install prerequipments | Install packages
+  ansible.builtin.apt:
+    name: "{{ common_os_packages }}"
+    state: present

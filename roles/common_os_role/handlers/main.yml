@@ -1,0 +1,13 @@
+---
+# handlers file for common_os_role
+- name: common_os_update_grub
+  ansible.builtin.shell: update-grub
+
+- name: common_os_reboot
+  ansible.builtin.reboot:
+    msg: "Rebooting machine in 5 seconds"
+  when: common_os_allow_reboot
+
+- name: common_os_netplan_try
+  timeout: 10
+  ansible.builtin.shell: netplan try --timeout 60

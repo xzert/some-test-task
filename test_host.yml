@@ -1,0 +1,67 @@
+---
+- name: Deploy server
+  hosts:
+    - test_host
+  roles:
+    - common_os_role
+  vars:
+    common_os_allow_reboot: true
+    common_os_primary_network_interface_name: "net0"
+    common_os_encrypt_disks:
+      - name: firstencrypt
+        device: "/dev/xvdf"
+      - name: scndpartencrypt
+        device: "/dev/xvda14"
+    common_os_encrypt_disk_key: |
+      -----BEGIN PRIVATE KEY-----
+      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
+      wSsDzSBjeYQTWT/oyMIip3zC7KwuLw==
+      -----END PRIVATE KEY-----

@@ -1,0 +1,19 @@
+---
+- name: Common OS | Setup CPU | Get Cores governor policies
+  ansible.builtin.find:
+    paths: /sys/devices/system/cpu/cpufreq
+    patterns: "scaling_governor"
+    recurse: true
+    hidden: true
+    file_type: any
+  register: common_os_cpu_governor_policies
+  check_mode: false
+  become: false
+
+- name: Common OS | Setup CPU | Set Cores governor policies
+  ansible.builtin.copy:
+    content: "{{ common_os_cpu_performance_level }}"
+    dest: "{{ common_os_cpu_governor_policy_current.path }}"
+  loop: "{{ common_os_cpu_governor_policies.files }}"
+  loop_control:
+    loop_var: common_os_cpu_governor_policy_current

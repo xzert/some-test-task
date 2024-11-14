@@ -1,0 +1,7 @@
+---
+all:
+  hosts:
+    test_host:
+      ansible_host: somehost
+      ansible_ssh_user: ubuntu
+      ansible_ssh_private_key_file: key

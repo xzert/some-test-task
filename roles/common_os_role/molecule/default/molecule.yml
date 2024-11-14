@@ -1,0 +1,14 @@
+---
+driver:
+  name: molecule-proxmox
+  options:
+     api_host: 172.x.x.x
+     api_user: root@pam
+     api_password: ""
+     node: pve-02
+     ssh_user: root
+     ssh_identity_file: ~/.ssh/
+platforms:
+  - name: instance
+    template: seed-vm
+role_name_check: 1

@@ -1,0 +1,29 @@
+---
+- name: Common OS | Variables sanity check
+  ansible.builtin.include_tasks: vars_sanity_check.yml
+
+- name: Common OS | Install prerequipments
+  ansible.builtin.include_tasks: prereq.yml
+
+- name: Common OS | Setup CPU
+  ansible.builtin.include_tasks: set_cpu_cstate.yml
+
+- name: Common OS | Setup CPU
+  ansible.builtin.include_tasks: set_cpu_performance.yml
+  when: common_os_cpu_optimize_performance_level
+
+- name: Common OS | Encrypt Disk
+  ansible.builtin.include_tasks: encrypt_disk.yml
+  when: (common_os_encrypt_disks | length > 0 ) and common_os_encrypt_changes
+
+- name: Common OS | Setup Network interfaces
+  ansible.builtin.include_tasks: set_network.yml
+
+- name: Common OS | This machine CPU Info
+  ansible.builtin.debug:
+    msg: |
+      "CPU: {{ ansible_facts.processor }}
+      sockets: {{ ansible_facts.processor_count }}
+      cores: {{ ansible_facts.processor_cores }}
+      threads: {{ ansible_facts.processor_vcpus }}
+      HT: {{ (ansible_facts.processor_threads_per_core - 1) | bool }}"

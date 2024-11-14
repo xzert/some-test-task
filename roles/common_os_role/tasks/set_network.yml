@@ -1,0 +1,79 @@
+---
+- name: Common OS | Setup Network interfaces | Detect primary interface
+  ansible.builtin.set_fact:
+    common_os_primary_interface_default_name: "{{ ansible_facts.default_ipv4.interface }}"
+
+- name: Common OS | Setup CPU | Calculate if network interface changes needed
+  ansible.builtin.set_fact:
+    common_os_network_primary_interface_name_change: true
+  when: common_os_primary_interface_default_name != common_os_primary_network_interface_name
+
+- name: Common OS | Setup Network interfaces | Detect netplan if available
+  ansible.builtin.shell: command -v netplan >/dev/null 2>&1
+  register: common_os_detect_netplan
+  ignore_errors: true
+  changed_when: false
+  when: common_os_network_primary_interface_name_change
+
+- name: Common OS | Setup Network interfaces | Detect netplan if available
+  ansible.builtin.set_fact:
+    common_os_netplan: true
+  when: common_os_detect_netplan.rc == 0
+
+- name: Common OS | Setup Network interfaces | Find existing netplan config
+  ansible.builtin.find:
+    paths: /etc/netplan/
+    contains: '^(\s+)(.*){{ common_os_primary_interface_default_name }}(.*)$'
+  register: common_os_primary_interface_config_file
+  changed_when: false
+  check_mode: false
+  when: common_os_netplan
+
+- name: Common OS | Setup Network interfaces | Backup interface configuration
+  ansible.builtin.copy:
+    src: "{{ common_os_current_interface_config.path }}"
+    dest: "{{ common_os_current_interface_config.path }}.bak"
+    remote_src: true
+  loop: "{{ common_os_primary_interface_config_file.files }}"
+  loop_control:
+    loop_var: common_os_current_interface_config
+  when: common_os_netplan
+
+- name: Common OS | Setup Network interfaces | Change config for netplan and trigger try
+  ansible.builtin.lineinfile:
+    backrefs: true
+    path: "{{ common_os_current_interface_config.path }}"
+    regexp: '^(\s+)(.*){{ common_os_primary_interface_default_name }}(.*)$'
+    line: '\1\2{{ common_os_primary_network_interface_name }}\3'
+  loop: "{{ common_os_primary_interface_config_file.files }}"
+  loop_control:
+    loop_var: common_os_current_interface_config
+  when: common_os_netplan
+  notify: common_os_netplan_try
+
+- name: Common OS | Setup Network interfaces | Trigger Netplan apply config update
+  block:
+    - name: Common OS | Setup Network interfaces | Flush triggered handlers
+      meta: flush_handlers
+
+    - name: Common OS | Setup Network interfaces | Update interface Info
+      ansible.builtin.setup:
+        gather_subset:
+          - '!all'
+          - devices
+      check_mode: false
+
+    - name: Common OS | Primary interface Info
+      ansible.builtin.debug:
+        msg: "{{ ansible_facts.devices[common_os_primary_network_interface_name] | default(omit) }}"
+
+  rescue:
+    - name: Common OS | Setup Network interfaces | Restore backup interface configuration
+      ansible.builtin.copy:
+        src: "{{ common_os_current_interface_config.path }}.bak"
+        dest: "{{ common_os_current_interface_config.path }}"
+        remote_src: true
+      loop: "{{ common_os_primary_interface_config_file.files }}"
+      loop_control:
+        loop_var: common_os_current_interface_config
+  when: common_os_netplan

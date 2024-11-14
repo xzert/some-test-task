@@ -1,0 +1,28 @@
+---
+# defaults file for common_os_role
+common_os_allow_reboot: false
+common_os_cpu_optimize_cstates: true
+common_os_cpu_max_cstate: "0"
+common_os_cpu_optimize_performance_level: true
+common_os_cpu_cstate_change: false
+common_os_cpu_performance_level: performance
+common_os_cpu_performance_levels_list:
+  - ondemand
+  - conservative
+  - performance
+  - powersave
+  - userspace
+  - schedutil
+common_os_custon_grub_args:
+  - key: GRUB_CMDLINE_LINUX_DEFAULT
+    arg: "processor.max_cstate={{ common_os_cpu_max_cstate }}"
+  - key: GRUB_CMDLINE_LINUX_DEFAULT
+    arg: "intel_idle.max_cstate={{ common_os_cpu_max_cstate }}"
+
+common_os_primary_network_interface_name: "def_net0"
+common_os_packages_default:
+  - cryptsetup
+common_os_encrypt_changes: true
+common_os_encrypt_disk_key: ""
+common_os_encrypt_disks: []
+common_os_netplan: false

@@ -1,0 +1,33 @@
+---
+- name: Common OS | Encrypt Disk | Encrypt
+  community.crypto.luks_device:
+    device: "{{ common_os_current_disk.device }}"
+    state: "{{ common_os_current_disk.state | default('opened') }}"
+    name: "{{ common_os_current_disk.name }}"
+    keyfile: "{{ common_os_current_disk.keyfile | default(common_os_encrypt_disk_key) }}"
+    cipher: "{{ common_os_current_disk.cipher | default(omit) }}"
+    allow_discards: "{{ common_os_current_disk.allow_discards | default(omit) }}"
+    force_remove_last_key: "{{ common_os_current_disk.force_remove_last_key | default(omit) }}"
+    hash: "{{ common_os_current_disk.hash | default(omit) }}"
+    keysize: "{{ common_os_current_disk.keysize | default(omit) }}"
+    keyslot: "{{ common_os_current_disk.keyslot | default(omit) }}"
+    label: "{{ common_os_current_disk.label | default(omit) }}"
+    new_keyfile: "{{ common_os_current_disk.new_keyfile | default(omit) }}"
+    new_keyslot: "{{ common_os_current_disk.new_keyslot | default(omit) }}"
+    new_passphrase: "{{ common_os_current_disk.new_passphrase | default(omit) }}"
+    passphrase: "{{ common_os_current_disk.passphrase | default(omit) }}"
+    pbkdf: "{{ common_os_current_disk.pbkdf | default(omit) }}"
+    perf_no_read_workqueue: "{{ common_os_current_disk.perf_no_read_workqueue | default(omit) }}"
+    perf_no_write_workqueue: "{{ common_os_current_disk.perf_no_write_workqueue | default(omit) }}"
+    perf_same_cpu_crypt: "{{ common_os_current_disk.perf_same_cpu_crypt | default(omit) }}"
+    perf_submit_from_crypt_cpus: "{{ common_os_current_disk.perf_submit_from_crypt_cpus | default(omit) }}"
+    persistent: "{{ common_os_current_disk.persistent | default(omit) }}"
+    remove_keyfile: "{{ common_os_current_disk.remove_keyfile | default(omit) }}"
+    remove_keyslot: "{{ common_os_current_disk.remove_keyslot | default(omit) }}"
+    remove_passphrase: "{{ common_os_current_disk.remove_passphrase | default(omit) }}"
+    sector_size: "{{ common_os_current_disk.sector_size | default(omit) }}"
+    type: "{{ common_os_current_disk.type | default(omit) }}"
+    uuid: "{{ common_os_current_disk.uuid | default(omit) }}"
+  loop: "{{ common_os_encrypt_disks }}"
+  loop_control:
+    loop_var: common_os_current_disk
